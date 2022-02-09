@@ -62,10 +62,12 @@ class GridTableExtension(markdown.Extension):
                                       GridTableProcessor(md.parser),
                                       '<hashheader')
 
-def makeExtension(configs={}):
-    return GridTableExtension(configs=configs)
 
-class GridTableCell(object):
+def makeExtension(*args, **kwargs):
+    return GridTableExtension(*args, **kwargs)
+
+
+class GridTableCell:
     """
     A single cell in a grid table. A cell's boundaries are determined by a
     starting point in the top left (start_row and start_col), as well as a
