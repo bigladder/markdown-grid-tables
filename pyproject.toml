@@ -1,0 +1,46 @@
+[project]
+name = "markdown_grid_tables"
+description = "Python-Markdown extension to support grid tables."
+readme = "README.md"
+requires-python = ">=3.7"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Alexander Abbott", email = "smartboyathome@gmail.com" },
+    { name = "Will Da Silva", email = "will@willdasilva.xyz" },
+]
+keywords = ["python-markdown", "extension", "plugin", "markdown", "mkdocs"] # max of 5 keywords
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development",
+    "Topic :: Text Processing :: Markup",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
+dependencies = [
+    "markdown>=3.0.0",
+]
+dynamic = ["version"]
+
+
+[project.urls]
+homepage = "https://gitlab.com/WillDaSilva/markdown_grid_tables"
+documentation = "https://gitlab.com/WillDaSilva/markdown_grid_tables"
+repository = "https://gitlab.com/WillDaSilva/markdown_grid_tables"
+
+
+[build-system]
+requires = ["flit_scm"]
+build-backend = "flit_scm:buildapi"
+
+
+[tool.flit.sdist]
+exclude = [
+    ".gitignore",
+]
+
+[tool.setuptools_scm]
+write_to = "src/markdown_grid_tables/_version.py"
