@@ -53,6 +53,8 @@ import re
 import markdown
 from markdown.util import etree
 
+from ._version import version as __version__
+
 
 class GridTableExtension(markdown.Extension):
     def extendMarkdown(self, md, md_globals):
