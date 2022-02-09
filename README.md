@@ -1,4 +1,5 @@
-Markdown-GridTables
-===================
+# Markdown Grid Tables
 
-Smart grid tables will convert ascii grid tables to proper html grid tables.
+[Python-Markdown](https://python-markdown.github.io/) [extension](https://python-markdown.github.io/extensions/api/) to support grid tables.
+
+[Fork of Markdown-GridTables by Alexander Abbott](https://github.com/smartboyathome/Markdown-GridTables)
