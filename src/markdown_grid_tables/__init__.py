@@ -51,14 +51,21 @@ http://docutils.svn.sourceforge.net/viewvc/docutils/trunk/docutils/docutils/pars
 import re
 
 import markdown
-from markdown.util import etree
+import xml.etree.ElementTree as etree
 
 from ._version import version as __version__
 
 
 class GridTableExtension(markdown.Extension):
-    def extendMarkdown(self, md, md_globals):
-        md.parser.blockprocessors.add('grid-table', GridTableProcessor(md.parser), '<hashheader')
+    def extendMarkdown(self, md, **kwargs): # , md_globals):
+        blockprocessors = md.parser.blockprocessors
+        try:
+            # Try using `.add` for compatibility with older versions of the Markdown package.
+            blockprocessors.add('grid-table', GridTableProcessor(md.parser), '<hashheader')
+        except AttributeError:
+            # Use a priority of 65 to be processed before the `hashheader` extension.
+            blockprocessors.register(GridTableProcessor(md.parser), 'grid-table', 65)
+
 
 
 def makeExtension(*args, **kwargs):
