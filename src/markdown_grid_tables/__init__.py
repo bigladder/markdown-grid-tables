@@ -62,11 +62,11 @@ class GridTableExtension(markdown.Extension):
     def extendMarkdown(self, md, **kwargs): # , md_globals):
         blockprocessors = md.parser.blockprocessors
         try:
-            # Try using `.add` for compatibility with older versions of the Markdown package.
-            blockprocessors.add('grid-table', GridTableProcessor(md.parser), '<hashheader')
-        except AttributeError:
             # Use a priority of 65 to be processed before the `hashheader` extension.
             blockprocessors.register(GridTableProcessor(md.parser), 'grid-table', 65)
+        except AttributeError:
+            # Try using `.add` for compatibility with older versions of the Markdown package.
+            blockprocessors.add('grid-table', GridTableProcessor(md.parser), '<hashheader')
 
 
 
