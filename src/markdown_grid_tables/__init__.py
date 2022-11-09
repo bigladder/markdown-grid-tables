@@ -50,11 +50,13 @@ http://docutils.svn.sourceforge.net/viewvc/docutils/trunk/docutils/docutils/pars
 
 import re
 
+import logging
 import markdown
 import xml.etree.ElementTree as etree
 
 from ._version import version as __version__
 
+logger = logging.getLogger('MARKDOWN')
 
 class GridTableExtension(markdown.Extension):
     def extendMarkdown(self, md, **kwargs): # , md_globals):
@@ -468,25 +470,26 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
         """
         orig_block = [r.strip() for r in blocks.pop(0).split('\n')]
         body_block = orig_block[:]
-        success, body = self._get_all_cells(body_block)
+        try:
+            success, body = self._get_all_cells(body_block)
+        except:
+            success = False
+
         if not success:
-            self._render_as_block(parent, '\n'.join(orig_block))
+            text = '\n'.join(orig_block)
+            logger.warning("Error rendering grid table:\n%s" % text)
+            self._render_as_block(parent, text)
             return
         table = etree.SubElement(parent, 'table')
         self._render_rows(body, table)
 
     def _render_as_block(self, parent, text):
         """
-        Renders a table as a block of text instead of a table. This isn't done
-        correctly, since the serialized items are serialized again, but I'll
-        fix this later.
+        Renders a table as a block of text instead of a table.
         """
-        trans_table = [(' ', '&nbsp;'), ('<', '&lt;'), ('>', '&gt;'), ('&', '&amp;')]
-        for from_char, to_char in trans_table:
-            text = text.replace(from_char, to_char)
-        div = etree.SubElement(parent, 'div')
-        div.set('class', 'grid-table-error')
-        div.text = text
+        pre = etree.SubElement(parent, 'pre')
+        pre.set('class', 'grid-table-error')
+        pre.text = text
 
     def _header_exists(self, block):
         """Checks if a header exists. A header is defined by a row of '=' characters."""
