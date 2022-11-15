@@ -56,7 +56,8 @@ import xml.etree.ElementTree as etree
 
 from ._version import version as __version__
 
-logger = logging.getLogger('MARKDOWN')
+logger = logging.getLogger('markdown-grid-tables')
+
 
 class GridTableExtension(markdown.Extension):
     def extendMarkdown(self, md, **kwargs): # , md_globals):
@@ -67,7 +68,6 @@ class GridTableExtension(markdown.Extension):
         except AttributeError:
             # Try using `.add` for compatibility with older versions of the Markdown package.
             blockprocessors.add('grid-table', GridTableProcessor(md.parser), '<hashheader')
-
 
 
 def makeExtension(*args, **kwargs):
