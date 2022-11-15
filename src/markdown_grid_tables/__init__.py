@@ -50,22 +50,24 @@ http://docutils.svn.sourceforge.net/viewvc/docutils/trunk/docutils/docutils/pars
 
 import re
 
+import logging
 import markdown
 import xml.etree.ElementTree as etree
 
 from ._version import version as __version__
+
+logger = logging.getLogger('markdown-grid-tables')
 
 
 class GridTableExtension(markdown.Extension):
     def extendMarkdown(self, md, **kwargs): # , md_globals):
         blockprocessors = md.parser.blockprocessors
         try:
-            # Try using `.add` for compatibility with older versions of the Markdown package.
-            blockprocessors.add('grid-table', GridTableProcessor(md.parser), '<hashheader')
-        except AttributeError:
             # Use a priority of 65 to be processed before the `hashheader` extension.
             blockprocessors.register(GridTableProcessor(md.parser), 'grid-table', 65)
-
+        except AttributeError:
+            # Try using `.add` for compatibility with older versions of the Markdown package.
+            blockprocessors.add('grid-table', GridTableProcessor(md.parser), '<hashheader')
 
 
 def makeExtension(*args, **kwargs):
@@ -469,24 +471,22 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
         orig_block = [r.strip() for r in blocks.pop(0).split('\n')]
         body_block = orig_block[:]
         success, body = self._get_all_cells(body_block)
+
         if not success:
-            self._render_as_block(parent, '\n'.join(orig_block))
+            text = '\n'.join(orig_block)
+            logger.warning(f"Error rendering grid table:\n{text}")
+            self._render_as_block(parent, text)
             return
         table = etree.SubElement(parent, 'table')
         self._render_rows(body, table)
 
     def _render_as_block(self, parent, text):
         """
-        Renders a table as a block of text instead of a table. This isn't done
-        correctly, since the serialized items are serialized again, but I'll
-        fix this later.
+        Renders a table as a block of text instead of a table.
         """
-        trans_table = [(' ', '&nbsp;'), ('<', '&lt;'), ('>', '&gt;'), ('&', '&amp;')]
-        for from_char, to_char in trans_table:
-            text = text.replace(from_char, to_char)
-        div = etree.SubElement(parent, 'div')
-        div.set('class', 'grid-table-error')
-        div.text = text
+        pre = etree.SubElement(parent, 'pre')
+        pre.set('class', 'grid-table-error')
+        pre.text = text
 
     def _header_exists(self, block):
         """Checks if a header exists. A header is defined by a row of '=' characters."""
@@ -601,6 +601,8 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
         height = 1
         while start_row + height < len(block):
             cur_row = start_row + height
+            if cur_col >= len(block[cur_row]):
+                break
             if block[cur_row][cur_col] == '+':
                 result = self._scan_left(block, start_row, start_col, cur_col, cur_row)
                 if result is None:
