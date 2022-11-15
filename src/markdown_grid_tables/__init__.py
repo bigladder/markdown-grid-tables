@@ -470,14 +470,11 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
         """
         orig_block = [r.strip() for r in blocks.pop(0).split('\n')]
         body_block = orig_block[:]
-        try:
-            success, body = self._get_all_cells(body_block)
-        except:
-            success = False
+        success, body = self._get_all_cells(body_block)
 
         if not success:
             text = '\n'.join(orig_block)
-            logger.warning("Error rendering grid table:\n%s" % text)
+            logger.warning(f"Error rendering grid table:\n{text}")
             self._render_as_block(parent, text)
             return
         table = etree.SubElement(parent, 'table')
@@ -604,6 +601,8 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
         height = 1
         while start_row + height < len(block):
             cur_row = start_row + height
+            if cur_col >= len(block[cur_row]):
+                break
             if block[cur_row][cur_col] == '+':
                 result = self._scan_left(block, start_row, start_col, cur_col, cur_row)
                 if result is None:
