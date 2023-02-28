@@ -351,7 +351,7 @@ class GridTable:
         for cell in self._rows[-2].get_all_cells_taller_than_this_row():
             cell.rowspan += 1
             self._rows[-1].add_cell(cell)
-        return self._rows[-1].start_row, self._rows[-1].start_col
+        return self._rows[-1].start_row
 
     def add_cell(self, cell):
         """Adds a cell to the last row in the table."""
@@ -550,10 +550,19 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
         while start_row < len(block)-1:
             new_cell = self._scan_cell(block, start_row, start_col)
             if new_cell is None or not table.add_cell(new_cell):
-                return False, table
+                try:
+                    start_col += next(cell.width for cell in table._rows[-2].get_all_cells() if cell.start_col >= start_col)
+                except StopIteration:
+                    if start_col < len(block[start_row])-1:
+                        return False, table
+                    start_row = table.new_row()
+                    start_col = 0
+                continue
+
             if start_col + new_cell.width >= len(block[start_row])-1:
                 is_header = header_exists and table._rows[-1].end_row < header_location
-                start_row, start_col = table.new_row(is_header=is_header)
+                start_row = table.new_row(is_header=is_header)
+                start_col = 0
             else:
                 start_col += new_cell.width
         table.calculate_colspans()
@@ -601,15 +610,16 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
         height = 1
         while start_row + height < len(block):
             cur_row = start_row + height
-            if cur_col >= len(block[cur_row]):
-                break
-            if block[cur_row][cur_col] == '+':
+            test_col=cur_col
+            if len(block[cur_row])< cur_col:
+                test_col=len(block[cur_row])-1
+            if block[cur_row][test_col] == '+':
                 result = self._scan_left(block, start_row, start_col, cur_col, cur_row)
                 if result is None:
                     height += 1
                     continue
                 return result
-            elif block[cur_row][cur_col] == '|':
+            elif block[cur_row][test_col] == '|':
                 height += 1
             else:
                 break
