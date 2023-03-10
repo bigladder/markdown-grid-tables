@@ -552,7 +552,7 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
             if new_cell is None or not table.add_cell(new_cell):
                 try:
                     start_col += next(cell.width for cell in table._rows[-2].get_all_cells() if cell.start_col >= start_col)
-                except StopIteration:
+                except (IndexError,StopIteration):
                     if start_col < len(block[start_row])-1:
                         return False, table
                     start_row = table.new_row()
