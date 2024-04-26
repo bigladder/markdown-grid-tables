@@ -550,14 +550,18 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
         while start_row < len(block)-1:
             try:
                 new_cell = self._scan_cell(block, start_row, start_col)
-                if new_cell is None or not table.add_cell(new_cell):
+            except (IndexError):
+                return False, table
+
+            if new_cell is None or not table.add_cell(new_cell):
+                try:
                     start_col += next(cell.width for cell in table._rows[-2].get_all_cells() if cell.start_col >= start_col)
-            except (IndexError,StopIteration):
-                if start_col < len(block[start_row])-1:
-                    return False, table
-                start_row = table.new_row()
-                start_col = 0
-            continue
+                except (IndexError,StopIteration):
+                    if start_col < len(block[start_row])-1:
+                        return False, table
+                    start_row = table.new_row()
+                    start_col = 0
+                continue
 
             if start_col + new_cell.width >= len(block[start_row])-1:
                 is_header = header_exists and table._rows[-1].end_row < header_location
