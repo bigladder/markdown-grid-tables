@@ -559,7 +559,10 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
                 except (IndexError,StopIteration):
                     if start_col < len(block[start_row])-1:
                         return False, table
-                    start_row = table.new_row()
+                    try:
+                        start_row = table.new_row()
+                    except (TypeError):
+                        return False, table
                     start_col = 0
                 continue
 
