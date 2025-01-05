@@ -53,6 +53,7 @@ import re
 import logging
 import markdown
 import xml.etree.ElementTree as etree
+from unicodedata import east_asian_width
 
 from ._version import version as __version__
 
@@ -443,6 +444,36 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
     table is generated as a block of text instead of being removed.
     """
     _header_regex = r'\+=+(\+=+)*\+'
+    _double_width_pad_char = '\x00'
+
+    def _row_pad_double_width_char(self, row):
+        """
+        This function pads all double-width characters in the row with a
+        special chararcter, _double_width_pad_char, to ensure the process of
+        scanning for cell works properly.
+        It is designed to handle East Asian characters and other double-width
+        characters, ensuring the source code looks good in monospace font.
+        The extra padding chars are removed in function _gather_text().
+        """
+        new_row = []
+        for char in row:
+            new_row.append(char)
+            if east_asian_width(char) in "WF":
+                # Using unicodedata to check character width.
+                # W: Wide, F: Fullwidth.
+                new_row.append(self._double_width_pad_char)
+        return ''.join(new_row)
+
+    def _block_pad_double_width_char(self, block):
+        """
+        This function pads all double-width characters in the block with a
+        special chararcter, _double_width_pad_char, to ensure the process of
+        scanning for cell works properly.
+        It is designed to handle East Asian characters and other double-width
+        characters, ensuring the source code looks good in monospace font.
+        The extra padding chars are removed in function _gather_text().
+        """
+        return [self._row_pad_double_width_char(line) for line in block]
 
     def test(self, parent, block):
         """
@@ -469,7 +500,7 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
         column spans.
         """
         orig_block = [r.strip() for r in blocks.pop(0).split('\n')]
-        body_block = orig_block[:]
+        body_block = self._block_pad_double_width_char(orig_block)[:]
         success, body = self._get_all_cells(body_block)
 
         if not success:
@@ -685,10 +716,12 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
         """
         Gathers the text within the cell defined by the start row, start
         column, end row, and end column and returns them as one string.
+        This function also removes the extra padding characters for double-
+        width character handling.
         """
         text = []
         for i in range(start_row+1, end_row):
-            text.append(block[i][start_col+1:end_col].rstrip())
+            text.append(block[i][start_col+1:end_col].replace(self._double_width_pad_char, '').rstrip())
         return '\n'.join(self._unindent_one_level(text))
 
     def _unindent_one_level(self, text):
