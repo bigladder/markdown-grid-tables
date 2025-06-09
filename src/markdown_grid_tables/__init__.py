@@ -722,7 +722,7 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
         text = []
         for i in range(start_row+1, end_row):
             text.append(block[i][start_col+1:end_col].replace(self._double_width_pad_char, '').rstrip())
-        return '\n'.join(self._unindent_one_level(text))
+        return '  \n'.join(self._unindent_one_level(text))
 
     def _unindent_one_level(self, text):
         """
