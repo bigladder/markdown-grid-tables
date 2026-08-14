@@ -595,10 +595,33 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
         stage -- so any block-level construct implemented as a preprocessor (e.g. fenced code
         blocks, footnotes) is never recognized inside a cell without this.
         """
-        lines = text.split('\n')
+        lines = self._unglue_fence_markers(text.split('\n'))
         for preprocessor in self.parser.md.preprocessors:
             lines = preprocessor.run(lines)
         return '\n'.join(lines)
+
+    def _unglue_fence_markers(self, lines):
+        """
+        - lines: (Array string), cell text already split on "\\n"
+        RETURN: (Array string), with any "```" preceded by other content on the same line
+          moved to a line of its own
+
+        A ``` must start its own line to be recognized as a fence by any Markdown
+        implementation, so a cell author gluing one directly onto a preceding line (e.g. a
+        def_list marker line, ":   ```") would otherwise silently fall back to inline code
+        instead of a real fenced block. Splitting leaves a now-empty prefix line non-blank
+        with a zero-width space, since def_list requires that too.
+        """
+        result = []
+        for line in lines:
+            index = line.find('```')
+            if index > 0:
+                prefix = line[:index] or '​'
+                result.append(prefix)
+                result.append(line[index:])
+            else:
+                result.append(line)
+        return result
 
     def _get_all_cells(self, block):
         """
