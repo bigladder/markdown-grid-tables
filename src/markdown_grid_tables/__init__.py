@@ -582,9 +582,23 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
                     else:
                         cell_element = etree.SubElement(tr, body_cell_tag)
                     rendered.append(cell)
-                    self.parser.parseBlocks(cell_element, cell.text.split('\n\n'))
+                    text = self._preprocess_cell_text(cell.text)
+                    self.parser.parseBlocks(cell_element, text.split('\n\n'))
                     cell_element.set('rowspan', str(cell.rowspan))
                     cell_element.set('colspan', str(cell.colspan))
+
+    def _preprocess_cell_text(self, text):
+        """
+        Runs `text` through the owning Markdown instance's registered preprocessors, the same
+        step the top-level document goes through before its own block-splitting. A cell would
+        otherwise skip this stage entirely -- parseBlocks only invokes the block-processor
+        stage -- so any block-level construct implemented as a preprocessor (e.g. fenced code
+        blocks, footnotes) is never recognized inside a cell without this.
+        """
+        lines = text.split('\n')
+        for preprocessor in self.parser.md.preprocessors:
+            lines = preprocessor.run(lines)
+        return '\n'.join(lines)
 
     def _get_all_cells(self, block):
         """
