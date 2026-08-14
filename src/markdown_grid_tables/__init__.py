@@ -741,10 +741,27 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
         text = []
         for i in range(start_row+1, end_row):
             text.append(block[i][start_col+1:end_col].replace(self._double_width_pad_char, '').rstrip())
+        lines = self._unindent_one_level(text)
         if self.hard_linebreaks:
-            return '  \n'.join(self._unindent_one_level(text))
-        else:
-            return '\n'.join(self._unindent_one_level(text))
+            return self._join_with_hard_linebreaks(lines)
+        return '\n'.join(lines)
+
+    def _join_with_hard_linebreaks(self, lines):
+        """
+        Joins cell lines with a Markdown hard line break ("  \n") between two lines that are
+        both non-blank, preserving the visual line break Markdown would otherwise collapse to
+        a space. A blank line (an empty string in `lines`) is joined with a plain newline
+        instead: collapsing it into a hard break would destroy the blank-line block boundary
+        that _render_rows's cell.text.split('\n\n') depends on to tell block-level constructs
+        apart (e.g. separate def_list terms, which would otherwise merge into one item).
+        """
+        if not lines:
+            return ''
+        parts = [lines[0]]
+        for prev, cur in zip(lines, lines[1:]):
+            parts.append('\n' if prev == '' or cur == '' else '  \n')
+            parts.append(cur)
+        return ''.join(parts)
 
     def _unindent_one_level(self, text):
         """
