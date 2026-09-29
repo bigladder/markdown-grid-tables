@@ -783,40 +783,53 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
             return self._join_with_hard_linebreaks(lines)
         return self._join_reflowed(lines)
 
+    def _join_lines(self, lines, non_blank_separator):
+        """
+        - lines: (Array string), cell text already split into physical rows
+        - non_blank_separator: string, what to join two consecutive non-blank, non-fenced lines
+          with (a plain space for _join_reflowed, a hard line break for _join_with_hard_linebreaks)
+        RETURN: string
+
+        A blank line (an empty string in `lines`) always joins with a real newline, preserving
+        the blank-line block boundary that _render_rows's cell.text.split('\n\n') depends on to
+        tell block-level constructs apart (e.g. separate def_list terms, which would otherwise
+        merge into one item). A fenced code block (delimited by a line containing ```, however it
+        got there -- see _unglue_fence_markers for the glued-prefix case) joins with a real
+        newline throughout instead, blank lines included: its own internal line breaks are part
+        of its content, not wrapping to undo, and a ``` buried mid-line by the usual reflow falls
+        back to inline code instead of being recognized as a fence at all.
+        """
+        if not lines:
+            return ''
+        parts = [lines[0]]
+        in_fence = '```' in lines[0]
+        for prev, cur in zip(lines, lines[1:]):
+            if in_fence or prev == '' or cur == '':
+                parts.append('\n')
+            else:
+                parts.append(non_blank_separator)
+            parts.append(cur)
+            if '```' in cur:
+                in_fence = not in_fence
+        return ''.join(parts)
+
     def _join_reflowed(self, lines):
         """
         Joins cell lines as if they'd never been wrapped onto more than one: consecutive
         non-blank lines join with a plain space, so inline markdown that only happens to fall
         across a width-driven line break - e.g. an attr_list `{: .class }` right after a link -
-        parses the same as it would on a single unwrapped line. A blank line (an empty string
-        in `lines`) still joins with a real newline, preserving the blank-line block boundary
-        that _render_rows's cell.text.split('\n\n') depends on to tell block-level constructs
-        apart (e.g. separate def_list terms, which would otherwise merge into one item).
+        parses the same as it would on a single unwrapped line. See _join_lines for the blank
+        line and fenced-code-block exceptions.
         """
-        if not lines:
-            return ''
-        parts = [lines[0]]
-        for prev, cur in zip(lines, lines[1:]):
-            parts.append('\n' if prev == '' or cur == '' else ' ')
-            parts.append(cur)
-        return ''.join(parts)
+        return self._join_lines(lines, ' ')
 
     def _join_with_hard_linebreaks(self, lines):
         """
         Joins cell lines with a Markdown hard line break ("  \n") between two lines that are
         both non-blank, preserving the visual line break Markdown would otherwise collapse to
-        a space. A blank line (an empty string in `lines`) is joined with a plain newline
-        instead: collapsing it into a hard break would destroy the blank-line block boundary
-        that _render_rows's cell.text.split('\n\n') depends on to tell block-level constructs
-        apart (e.g. separate def_list terms, which would otherwise merge into one item).
+        a space. See _join_lines for the blank line and fenced-code-block exceptions.
         """
-        if not lines:
-            return ''
-        parts = [lines[0]]
-        for prev, cur in zip(lines, lines[1:]):
-            parts.append('\n' if prev == '' or cur == '' else '  \n')
-            parts.append(cur)
-        return ''.join(parts)
+        return self._join_lines(lines, '  \n')
 
     def _unindent_one_level(self, text):
         """
