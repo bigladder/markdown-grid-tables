@@ -781,7 +781,25 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
         lines = self._unindent_one_level(text)
         if self.hard_linebreaks:
             return self._join_with_hard_linebreaks(lines)
-        return '\n'.join(lines)
+        return self._join_reflowed(lines)
+
+    def _join_reflowed(self, lines):
+        """
+        Joins cell lines as if they'd never been wrapped onto more than one: consecutive
+        non-blank lines join with a plain space, so inline markdown that only happens to fall
+        across a width-driven line break - e.g. an attr_list `{: .class }` right after a link -
+        parses the same as it would on a single unwrapped line. A blank line (an empty string
+        in `lines`) still joins with a real newline, preserving the blank-line block boundary
+        that _render_rows's cell.text.split('\n\n') depends on to tell block-level constructs
+        apart (e.g. separate def_list terms, which would otherwise merge into one item).
+        """
+        if not lines:
+            return ''
+        parts = [lines[0]]
+        for prev, cur in zip(lines, lines[1:]):
+            parts.append('\n' if prev == '' or cur == '' else ' ')
+            parts.append(cur)
+        return ''.join(parts)
 
     def _join_with_hard_linebreaks(self, lines):
         """
