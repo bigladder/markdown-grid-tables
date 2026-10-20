@@ -815,13 +815,15 @@ class GridTableProcessor(markdown.blockprocessors.BlockProcessor):
 
     def _join_reflowed(self, lines):
         """
-        Joins cell lines as if they'd never been wrapped onto more than one: consecutive
-        non-blank lines join with a plain space, so inline markdown that only happens to fall
-        across a width-driven line break - e.g. an attr_list `{: .class }` right after a link -
-        parses the same as it would on a single unwrapped line. See _join_lines for the blank
-        line and fenced-code-block exceptions.
+        Joins cell lines with plain newlines: Markdown soft breaks, which reflow into spaces
+        within a paragraph while still letting a line start a new block, such as each item of a
+        multi-item list. Joining with spaces instead would undo a width-driven wrap, but it also
+        merged every list item into the first. Telling a wrap apart from a deliberate line is up
+        to whatever wrote the table: it should never wrap so that a continuation line starts a
+        block, or splits inline markup like an attr_list `{: .class }` from its link. See
+        _join_lines for the blank line and fenced-code-block cases.
         """
-        return self._join_lines(lines, ' ')
+        return self._join_lines(lines, '\n')
 
     def _join_with_hard_linebreaks(self, lines):
         """
